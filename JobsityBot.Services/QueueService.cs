@@ -2,8 +2,14 @@
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using System.Text;
+using System.Text.Json;
 
 namespace JobsityBot.Services;
+
+public interface IQueueService
+{
+    void PublishToQueue(string message, int roomId);
+}
 
 public class QueueService : IQueueService
 {
@@ -14,7 +20,7 @@ public class QueueService : IQueueService
         this.options = options.Value;
     }
 
-    public void PublishToQueue(string message)
+    public void PublishToQueue(string message, int roomId)
     {
         var factory = new ConnectionFactory()
         {
@@ -30,17 +36,18 @@ public class QueueService : IQueueService
                              autoDelete: false,
                              arguments: null);
 
-        var body = Encoding.UTF8.GetBytes(message!);
-
         channel.BasicPublish(exchange: "",
                              routingKey: options.QueueName,
                              basicProperties: null,
-                             body: body);
+                             body: GetMessageBody(message, roomId));
     }
 
-}
+    private static byte[] GetMessageBody(string message, int roomId)
+    {
+        var msg = new QueueMessage(message, roomId);
 
-public interface IQueueService
-{
-    void PublishToQueue(string message);
+        var json = JsonSerializer.Serialize(msg);
+
+        return Encoding.UTF8.GetBytes(json);
+    }
 }

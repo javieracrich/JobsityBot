@@ -17,15 +17,15 @@ public class StockController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetStockQuoteAsync([FromQuery] string code)
+    public async Task<IActionResult> GetStockQuoteAsync([FromQuery] string code, [FromQuery] int roomId)
     {
-        if (string.IsNullOrWhiteSpace(code))
+        if (string.IsNullOrWhiteSpace(code) || roomId == 0)
         {
             return Ok();
         }
         var response = await this.stooqService.GetData(code);
 
-        this.queueService.PublishToQueue(response);
+        this.queueService.PublishToQueue(response, roomId);
 
         return Ok();
     }
