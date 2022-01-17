@@ -6,6 +6,11 @@ using System.Globalization;
 
 namespace JobsityBot.Services
 {
+    public interface IStooqService
+    {
+        Task<string> GetData(string code);
+    }
+
     public class StooqService : IStooqService
     {
         private readonly StooqOptions options;
@@ -30,20 +35,23 @@ namespace JobsityBot.Services
 
         private static string ParseCsvFile(string response)
         {
-            var record = new StockData();
-            using (var stringReader = new StringReader(response))
-            using (var csvReader = new CsvReader(stringReader, CultureInfo.CurrentCulture))
+            try
             {
-                record = csvReader.GetRecords<StockData>().FirstOrDefault();
+                var record = new StockData();
+                using (var stringReader = new StringReader(response))
+                using (var csvReader = new CsvReader(stringReader, CultureInfo.CurrentCulture))
+                {
+                    record = csvReader.GetRecords<StockData>().FirstOrDefault();
+                }
+                return record == null ?
+                    "I could not find data" :
+                    $"{record.Symbol} quote is {record.Open} per share";
             }
-            return record == null ?
-                "I could not find data" :
-                $"{record.Symbol} quote is {record.Open} per share";
-        }
-    }
+            catch
+            {
+                return "Api returned an invalid CSV. Could not parse data";
+            }
 
-    public interface IStooqService
-    {
-        Task<string> GetData(string code);
+        }
     }
 }

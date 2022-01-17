@@ -1,8 +1,8 @@
-﻿namespace JobsityBot.Services;
+﻿namespace Jobsity;
 
-public class QueueMessage
+public class BotMessage
 {
-    public QueueMessage(string text, int roomId)
+    public BotMessage(string text, int roomId)
     {
         Text = text;
         RoomId = roomId;

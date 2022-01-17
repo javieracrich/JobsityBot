@@ -1,4 +1,6 @@
+using Jobsity;
 using JobsityBot.Services;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JobsityBot.Controllers;
@@ -8,16 +10,16 @@ namespace JobsityBot.Controllers;
 public class StockController : ControllerBase
 {
     private readonly IStooqService stooqService;
-    private readonly IQueueService queueService;
+    private readonly IPublishEndpoint publishEndpoint;
 
-    public StockController(IStooqService stooqService, IQueueService queueService)
+    public StockController(IStooqService stooqService, IPublishEndpoint publishEndpoint)
     {
         this.stooqService = stooqService;
-        this.queueService = queueService;
+        this.publishEndpoint = publishEndpoint;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetStockQuoteAsync([FromQuery] string code, [FromQuery] int roomId)
+    public async Task<IActionResult> GetStockQuoteAsync([FromQuery] string code, [FromQuery] int roomId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(code) || roomId == 0)
         {
@@ -25,7 +27,7 @@ public class StockController : ControllerBase
         }
         var response = await this.stooqService.GetData(code);
 
-        this.queueService.PublishToQueue(response, roomId);
+        await this.publishEndpoint.Publish(new BotMessage(response, roomId), null, cancellationToken);
 
         return Ok();
     }
